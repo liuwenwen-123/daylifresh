@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import  View
+from django.views.generic import View
 # from django.core.urlresolvers import  resolve
-
+from django.conf import settings
 from django.urls import reverse
 from django.shortcuts import render, redirect
+from itsdangerous import  TimedJSONWebSignatureSerializer as Serializer
 
 import re
 from apps.user.models import User
@@ -57,14 +58,12 @@ def register_handle(request):
     return render(request, 'index.html')
 
 
+class RegisterView(View):
 
-class  RegisterView(View):
+    def get(sele, request):
+        return render(request, 'register.html')
 
-    def  get(sele,request):
-         return render(request,'register.html')
-
-
-    def  post(sele,request):
+    def post(sele, request):
         username = request.POST.get('user_name')
         password = request.POST.get('pwd')
         email = request.POST.get('email')
@@ -89,6 +88,14 @@ class  RegisterView(View):
         user = User.objects.create_user(username, email, password)
         user.is_active = 0
         user.save()
+
+        #  发送邮件 包含激活链接
+        # 加密用户的身份信息  生成激活token
+        serializer = Serializer(settings.SECRET_KEY,3600)
+        info = {'confirm':user.id}
+        token = serializer.dumps(info)
+        # 链接包含用户信息
+        #
         # 返回数据
         # return redirect(reverse('goods:index'))
         return render(request, 'index.html')
